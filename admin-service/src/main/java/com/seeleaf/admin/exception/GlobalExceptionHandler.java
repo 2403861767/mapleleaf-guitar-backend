@@ -1,10 +1,13 @@
-package com.seeleaf.parent.exception;
+package com.seeleaf.admin.exception;
 
 import com.seeleaf.parent.common.BaseResponse;
 import com.seeleaf.parent.common.ErrorCode;
 import com.seeleaf.parent.common.ResultUtils;
+import com.seeleaf.parent.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**

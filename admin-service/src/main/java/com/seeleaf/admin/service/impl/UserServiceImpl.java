@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
 * @author 24038
@@ -43,6 +45,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         if (userPassword.length() < 8 || checkPassword.length() < 8) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户密码过短");
+        }
+        // 账户不能包含特殊字符
+        String validPattern = "[`~!@#$%^&*()+=|{}':;',//[//].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
+        Matcher matcher = Pattern.compile(validPattern).matcher(userAccount);
+        if (matcher.find()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账号有非法字符!");
         }
         // 密码和校验密码相同
         if (!userPassword.equals(checkPassword)) {
@@ -83,6 +91,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         if (userPassword.length() < 8) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码错误");
+        }
+        // 账户不能包含特殊字符
+        String validPattern = "[`~!@#$%^&*()+=|{}':;',//[//].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
+        Matcher matcher = Pattern.compile(validPattern).matcher(userAccount);
+        if (matcher.find()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账号有非法字符!");
         }
         // 2. 加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
