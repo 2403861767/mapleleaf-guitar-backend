@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Profile;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.Contact;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
@@ -22,18 +24,32 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Profile({"dev", "test"})
 public class Knife4jConfig {
 
-    @Bean
-    public Docket defaultApi2() {
+    @Bean(value = "dockerBean")
+    public Docket dockerBean() {
         return new Docket(DocumentationType.SWAGGER_2)
-                .apiInfo(new ApiInfoBuilder()
-                        .title("后台管理接口文档")
-                        .description("枫叶吉他分享网后台管理")
-                        .version("1.0")
-                        .build())
+                .apiInfo(apiInfo())
                 .select()
-                // 指定 Controller 扫描包路径
                 .apis(RequestHandlerSelectors.basePackage("com.seeleaf.admin.controller"))
+//扫描路径，获取controller层的接口    .apis(RequestHandlerSelectors.basePackage("com.fourgirls.xiaoxiang.controller"))
                 .paths(PathSelectors.any())
+                .build();
+    }
+
+    /**
+     *
+     * api 信息
+     * @return
+     */
+    public ApiInfo apiInfo() {
+        return new ApiInfoBuilder()
+                //标题
+                .title("后台管理接口文档")
+                //简介
+                .description("吉他网后台管理接口文档")
+                //作者、网址http:localhost:8088/doc.html(这里注意端口号要与项目一致，如果你的端口号后面还加了前缀，就需要把前缀加上)、邮箱
+                .contact(new Contact("seeleaf", "http:localhost:9999/api/doc.html", "2403861767@qq.com"))
+                //版本
+                .version("1.0")
                 .build();
     }
 }

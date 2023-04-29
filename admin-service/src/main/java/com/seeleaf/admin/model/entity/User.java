@@ -44,6 +44,11 @@ public class User implements Serializable {
     private String userAvatar;
 
     /**
+     * 年龄
+     */
+    @TableField(value = "age")
+    private Integer age;
+    /**
      * 性别
      */
     @TableField(value = "gender")

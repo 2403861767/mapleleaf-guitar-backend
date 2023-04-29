@@ -1,8 +1,14 @@
 package com.seeleaf.admin.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.seeleaf.admin.model.enums.UserRoleEnum;
+import com.seeleaf.admin.model.request.user.UserQueryRequest;
 import com.seeleaf.admin.model.vo.user.LoginUserVO;
+import com.seeleaf.admin.model.vo.user.UserPageVo;
+import com.seeleaf.admin.model.vo.user.UserVo;
 import com.seeleaf.parent.common.ErrorCode;
 import com.seeleaf.parent.constant.UserConstant;
 import com.seeleaf.parent.exception.BusinessException;
@@ -11,6 +17,7 @@ import com.seeleaf.admin.mapper.UserMapper;
 import com.seeleaf.admin.model.entity.User;
 
 
+import com.seeleaf.parent.utils.BeanCopyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -19,20 +26,27 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.seeleaf.admin.model.enums.UserRoleEnum.SUPERADMIN;
+import static com.seeleaf.parent.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
-* @author 24038
-* @description 针对表【user(用户)】的数据库操作Service实现
-* @createDate 2023-04-26 19:53:08
-*/
+ * @author 24038
+ * @description 针对表【user(用户)】的数据库操作Service实现
+ * @createDate 2023-04-26 19:53:08
+ */
 @Service
 @Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
-    implements UserService {
+        implements UserService {
 
     private static final String SALT = "seeleaf";
+
     // 注册
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
@@ -50,7 +64,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String validPattern = "[`~!@#$%^&*()+=|{}':;',//[//].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
         Matcher matcher = Pattern.compile(validPattern).matcher(userAccount);
         if (matcher.find()) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账号有非法字符!");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号有非法字符!");
         }
         // 密码和校验密码相同
         if (!userPassword.equals(checkPassword)) {
@@ -79,6 +93,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return user.getId();
         }
     }
+
     // 登录
     @Override
     public LoginUserVO userLogin(String userAccount, String userPassword, HttpServletRequest request) {
@@ -96,7 +111,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String validPattern = "[`~!@#$%^&*()+=|{}':;',//[//].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
         Matcher matcher = Pattern.compile(validPattern).matcher(userAccount);
         if (matcher.find()) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账号有非法字符!");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号有非法字符!");
         }
         // 2. 加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
@@ -111,7 +126,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或密码错误");
         }
         // 3. 记录用户的登录态
-        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        request.getSession().setAttribute(USER_LOGIN_STATE, user);
         // 4. 封装返回vo
         LoginUserVO loginUserVO = null;
         try {
@@ -127,7 +142,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public User getLoginUser(HttpServletRequest request) {
         // 先判断是否已登录
-        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null || currentUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
@@ -139,6 +154,54 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 //            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
 //        }
         return currentUser;
+    }
+
+    // 登出
+    @Override
+    public int userLogout(HttpServletRequest request) {
+        request.getSession().removeAttribute(USER_LOGIN_STATE);
+        return 1;
+    }
+
+    @Override
+    public boolean isSuperAdmin(HttpServletRequest request) {
+        User loginUser = this.getLoginUser(request);
+        String userRole = loginUser.getUserRole();
+        if (StringUtils.isNotBlank(userRole) && (SUPERADMIN.getValue().equals(userRole))){
+            return true;
+        }
+        return false;
+    }
+
+    // 分页查询
+    @Override
+    public UserPageVo pageQuery(UserQueryRequest userQueryRequest, HttpServletRequest request) {
+        if (userQueryRequest == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"参数错误");
+        }
+        if (!isSuperAdmin(request)){
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有权限");
+        }
+
+        String searchText = userQueryRequest.getSearchText();
+        long pageSize = userQueryRequest.getPageSize();
+        long current = userQueryRequest.getCurrent();
+        LambdaQueryWrapper<User> qWrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.isNotBlank(searchText)){
+            qWrapper.like(User::getUserAccount,searchText).or().like(User::getUserName,searchText)
+                    .or().like(User::getAge,searchText)
+                    .or().like(User::getGender,searchText);
+        }
+        Page<User> userPage = new Page<>(current, pageSize);
+        Page<User> page = page(userPage, qWrapper);
+        List<User> userList = page.getRecords();
+        List<UserVo> userVoList = BeanCopyUtils.copyBeanList(userList, UserVo.class);
+        UserPageVo userPageVo = new UserPageVo();
+        userPageVo.setUserList(userVoList);
+        userPageVo.setPageSize(pageSize);
+        userPageVo.setTotal(page.getTotal());
+        userPageVo.setCurrent(current);
+        return userPageVo;
     }
 }
 

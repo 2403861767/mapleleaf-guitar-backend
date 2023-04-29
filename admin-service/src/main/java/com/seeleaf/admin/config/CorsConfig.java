@@ -8,15 +8,22 @@ import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 @Configuration
 public class CorsConfig {
-    private CorsConfiguration buildConfig() {
+    private List<String> allAllowedMethods = new ArrayList<>();
+        private CorsConfiguration buildConfig() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowedOriginPatterns(Collections.singletonList("*")); // 1 // 8972
         corsConfiguration.addAllowedHeader("*"); // 2
-        corsConfiguration.addAllowedMethod("*"); // 3
+            allAllowedMethods.add("GET");
+            allAllowedMethods.add("POST");
+            allAllowedMethods.add("PUT");
+            allAllowedMethods.add("DELETE");
+        corsConfiguration.setAllowedMethods(allAllowedMethods); // 3
         corsConfiguration.setAllowCredentials(true);
         return corsConfiguration;
     }
@@ -27,4 +34,6 @@ public class CorsConfig {
         source.registerCorsConfiguration("/**", buildConfig()); // 4
         return new CorsFilter(source);
     }
+
+
 }

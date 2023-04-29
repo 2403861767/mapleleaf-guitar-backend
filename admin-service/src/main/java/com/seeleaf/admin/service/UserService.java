@@ -3,9 +3,13 @@ package com.seeleaf.admin.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.seeleaf.admin.model.entity.User;
+import com.seeleaf.admin.model.request.user.UserQueryRequest;
 import com.seeleaf.admin.model.vo.user.LoginUserVO;
+import com.seeleaf.admin.model.vo.user.UserPageVo;
+import com.seeleaf.admin.model.vo.user.UserVo;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author 24038
@@ -40,4 +44,20 @@ public interface UserService extends IService<User> {
      * @return 当前用户
      */
     User getLoginUser(HttpServletRequest request);
+
+    /**
+     * 用户登出
+     * @param request http请求
+     * @return
+     */
+    int userLogout(HttpServletRequest request);
+
+    /**
+     * 是否是超级管理员
+     * @param request http请求
+     * @return
+     */
+    boolean isSuperAdmin(HttpServletRequest request);
+
+    UserPageVo pageQuery(UserQueryRequest userQueryRequest, HttpServletRequest request);
 }
