@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.seeleaf.admin.model.enums.UserRoleEnum.SUPERADMIN;
+import static com.seeleaf.parent.constant.UserConstant.SALT;
 import static com.seeleaf.parent.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
@@ -45,7 +46,7 @@ import static com.seeleaf.parent.constant.UserConstant.USER_LOGIN_STATE;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
 
-    private static final String SALT = "seeleaf";
+
 
     // 注册
     @Override
