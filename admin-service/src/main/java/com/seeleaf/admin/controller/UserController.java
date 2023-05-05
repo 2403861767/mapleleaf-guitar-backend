@@ -131,7 +131,7 @@ public class UserController {
     }
 
     /**
-     * 删除用户（仅管理员）
+     * 删除用户（仅超级管理员）
      *
      * @param deleteRequest 删除参数
      * @return 是否删除成功
@@ -144,6 +144,28 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         boolean b = userService.removeById(deleteRequest.getId());
+        return ResultUtils.success(b);
+    }
+    /**
+     * 封禁用户（仅超级管理员）
+     *
+     * @param deleteRequest 删除参数
+     * @return 是否删除成功
+     */
+    @ApiOperation("删除用户")
+    @PostMapping("/ban")
+    @AuthCheck(mustRole = UserConstant.SUPER_ADMIN_ROLE)
+    public BaseResponse<Boolean> banUser(@RequestBody DeleteRequest deleteRequest) {
+        if (deleteRequest == null || deleteRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // TODO 加锁
+        User user = userService.getById(deleteRequest.getId());
+        if (user == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        user.setUserStatus(2);
+        boolean b = userService.updateById(user);
         return ResultUtils.success(b);
     }
 
